@@ -110,6 +110,7 @@ def checkMinSup(C_k_pruned,k,TransactionList,min_sup):
 
     return L_k                
 
+
 '''
 getSubset(Candidate,prev=[]):
 itemset의 부분집합을 구해서 반환하는 함수
