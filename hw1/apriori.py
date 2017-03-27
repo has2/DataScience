@@ -1,4 +1,5 @@
-
+import sys
+import decimal
 '''
 makeItemSet(TransactionList):
 TransactinList로부터 item의 집합을 추출
@@ -11,7 +12,6 @@ def makeItemSet(TransactionList):
                 itemSet.append(item)
     itemSet.sort()
     return itemSet
-
 
 '''
 makeL1(TransactionList,itemSet,min_sup):
@@ -71,10 +71,8 @@ def apriori(TransactionList, L_list, min_sup, itemNum):
         L_k = checkMinSup(C_k_pruned,k,TransactionList,min_sup) 
         if L_k == []:
             return L_list
-        
-            
-        L_list.append(L_k)
-    
+                 
+        L_list.append(L_k)  
     return L_list
 
 '''
@@ -120,8 +118,6 @@ def checkMinSup(C_k_pruned,k,TransactionList,min_sup):
 
     return L_k             
 
-
-
 '''
 getSup(Ck_subset,TransactionList):
 특정 itemset의 support를 구하는 함수
@@ -133,9 +129,8 @@ def getSup(Lk_subset,TransactionList):
            if set(Lk_subset).issubset(transaction):
                 cnt+=1
     
-    sup = cnt / float(Total_trnsa)
+    sup = decimal.Decimal(cnt) / decimal.Decimal(Total_trnsa)
     return sup*100
-
 
 '''
 getSubset(Candidate,prev=[]):
@@ -149,10 +144,9 @@ def getSubset(Candidate,prev=[]):
 
 def getConfidence(item_p,item_q,TransactionList):
     union = item_p | item_q
-    p_q = getSup(list(union),TransactionList)/getSup(list(item_p),TransactionList)
-    q_p = getSup(list(union),TransactionList)/getSup(list(item_q),TransactionList)
+    p_q = decimal.Decimal(getSup(list(union),TransactionList))/decimal.Decimal(getSup(list(item_p),TransactionList))
 
-    return p_q*100,q_p*100
+    return p_q*100
 
 '''
 getAllAssociation(L_list,TransationList):
@@ -166,10 +160,12 @@ def getAllAssociation(L_list,TransationList):
             subset_list.pop()       
             for subset in subset_list:
                 sup = getSup(Li,TransactionList)
+                sup = sup.quantize(decimal.Decimal('.01'),rounding=decimal.ROUND_HALF_UP)
                 itemset_whole = set(Li)
                 itemset_p = set(subset)
                 itemset_q = itemset_whole - itemset_p
-                conf_p_q,conf_q_p = getConfidence(itemset_p,itemset_q,TransactionList)
+                conf_p_q = getConfidence(itemset_p,itemset_q,TransactionList)
+                conf_p_q = conf_p_q.quantize(decimal.Decimal('.01'),rounding=decimal.ROUND_HALF_UP)
 
                 temp = []
                 temp.append(itemset_p)
@@ -177,31 +173,29 @@ def getAllAssociation(L_list,TransationList):
                 temp.append(sup)
                 temp.append(conf_p_q)
                 Association_list.append(temp)
-
     return Association_list
 
-
-
 if __name__ =="__main__":
-    #TransactionList =[[1,2,3],[1,2,7],[1,4],[2,3,4]]
-    TransactionList =[[1,2,5],[1,2,4],[2,3],[4,5,6],[1,3,2]]
-    #TransactionList =[[4],[4],[3],[2]]
+
+    TransactionList =[]
+    min_sup = float(sys.argv[1])
+    with open(sys.argv[2]) as f:
+        for line in f:
+            int_list = [int(i) for i in line.split()]
+            TransactionList.append(int_list)
+
     itemSet = makeItemSet(TransactionList)
-    #min_sup=2/9.0*100
-    min_sup = 50
+  
     L1 = makeL1(TransactionList,itemSet,min_sup)
     L_list = [0]
     L_list.append(L1)
 
     L_list = apriori(TransactionList,L_list,min_sup,len(itemSet))
 
-    Association = getAllAssociation(L_list,TransactionList)
-    print(Association)
-    # print(L_list)
-    # a=getSubset([5,6])
-    # print(a)
-    # a=a[1:]
-    # a.pop()
-    # print(a)
-  
+    Association_list = getAllAssociation(L_list,TransactionList)
+    
+    with open(sys.argv[3], "w") as text_file:
+        for Asso in Association_list:
+          text_file.write("%s\t%s\t%.2f\t%.2f\n" % (Asso[0],Asso[1],Asso[2],Asso[3]))
+ 
    
